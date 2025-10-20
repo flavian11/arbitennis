@@ -200,18 +200,7 @@ class _MatchScreenState extends State<MatchScreen> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  // NET logic - counts as fault
-                  if (_isFirstFault) {
-                    setState(() {
-                      _isFirstFault = false;
-                    });
-                  } else {
-                    // Double fault - point to receiver
-                    final receivingPlayer = match.servingPlayer == 1 ? 2 : 1;
-                    context.read<MatchBloc>().add(AddPoint(widget.matchId, receivingPlayer));
                     _startTimer();
-                    _resetFaultStatus();
-                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,
