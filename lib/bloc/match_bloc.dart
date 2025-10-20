@@ -367,6 +367,11 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
         newScore2 == 0 &&
         (newSets[currentSetIndex].player1Games + newSets[currentSetIndex].player2Games > 0)) {
       newServingPlayer = match.servingPlayer == 1 ? 2 : 1;
+      // Switch side on odd games
+      if ((newSets[currentSetIndex].player1Games + newSets[currentSetIndex].player2Games) % 2 != 0) {
+        leftPlayer = leftPlayer == 1 ? 2 : 1;
+      }
+
     }
 
     // Check if we need to start a tiebreak
@@ -394,10 +399,6 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
       } else if (player2SetsWon >= match.setsToWin) {
         matchEnded = true;
         matchWinner = 2;
-      }
-
-      if ((newSets[currentSetIndex].player1Games + newSets[currentSetIndex].player2Games) % 2 != 0) {
-        leftPlayer = leftPlayer == 1 ? 2 : 1;
       }
 
       // Start a new set if match hasn't ended
@@ -430,6 +431,7 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
       currentGameScore2: newScore2,
       servingPlayer: newServingPlayer,
       pointHistory: updatedPointHistory,
+      leftPlayer: leftPlayer,
     );
 
     final updatedMatches = [...state.matches];

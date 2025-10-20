@@ -298,7 +298,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                 ),
                 child: Text(
-                  match.leftPlayer == 2 ? match.player2.name.toUpperCase() : match.player1.name.toUpperCase(),
+                  match.leftPlayer == 1 ? match.player2.name.toUpperCase() : match.player1.name.toUpperCase(),
                   style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold
