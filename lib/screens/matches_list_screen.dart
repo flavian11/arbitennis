@@ -59,7 +59,7 @@ class MatchListTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
-        title: Text('${match.player1Name} vs ${match.player2Name}'),
+        title: Text('${match.player1.name} vs ${match.player2.name}'),
         subtitle: Text(
           match.isCompleted
               ? 'Match terminé - Score final: ${match.scoreDisplay}'

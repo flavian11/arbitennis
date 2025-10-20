@@ -63,7 +63,7 @@ class _MatchScreenState extends State<MatchScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text('${match.player1Name} vs ${match.player2Name}'),
+            title: Text('${match.player1.name} vs ${match.player2.name}'),
             centerTitle: true,
             actions: [
               IconButton(
@@ -130,11 +130,11 @@ class _MatchScreenState extends State<MatchScreen> {
 
   Widget _buildPlayingField(BuildContext context, TennisMatch match) {
     final servingPlayerName = match.servingPlayer == 1
-        ? match.player1Name
-        : match.player2Name;
+        ? match.player1.name
+        : match.player2.name;
     final receivingPlayerName = match.servingPlayer == 1
-        ? match.player2Name
-        : match.player1Name;
+        ? match.player2.name
+        : match.player1.name;
 
     return Container(
       color: Colors.white,
@@ -280,7 +280,7 @@ class _MatchScreenState extends State<MatchScreen> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  context.read<MatchBloc>().add(AddPoint(widget.matchId, 1));
+                  context.read<MatchBloc>().add(AddPoint(widget.matchId, match.leftPlayer));
                   _startTimer();
                   _resetFaultStatus();
                 },
@@ -289,7 +289,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                 ),
                 child: Text(
-                  match.player1Name.toUpperCase(),
+                  match.leftPlayer == 1 ? match.player1.name.toUpperCase() : match.player2.name.toUpperCase(),
                   style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold
@@ -300,7 +300,7 @@ class _MatchScreenState extends State<MatchScreen> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  context.read<MatchBloc>().add(AddPoint(widget.matchId, 2));
+                  context.read<MatchBloc>().add(AddPoint(widget.matchId, match.leftPlayer == 1 ? 2 : 1));
                   _startTimer();
                   _resetFaultStatus();
                 },
@@ -309,7 +309,7 @@ class _MatchScreenState extends State<MatchScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                 ),
                 child: Text(
-                  match.player2Name.toUpperCase(),
+                  match.leftPlayer == 2 ? match.player2.name.toUpperCase() : match.player1.name.toUpperCase(),
                   style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold
@@ -361,7 +361,7 @@ class _MatchScreenState extends State<MatchScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: Text(
-                'MATCH TERMINÉ - ${match.winner == 1 ? match.player1Name : match.player2Name} GAGNANT',
+                'MATCH TERMINÉ - ${match.winner == 1 ? match.player1.name : match.player2.name} GAGNANT',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -375,7 +375,7 @@ class _MatchScreenState extends State<MatchScreen> {
   }
 
   Widget _buildPlayerScoreRow(BuildContext context, TennisMatch match, int playerNum) {
-    final playerName = playerNum == 1 ? match.player1Name : match.player2Name;
+    final playerName = playerNum == 1 ? match.player1.name : match.player2.name;
     final isServing = match.servingPlayer == playerNum;
 
     return Row(
@@ -441,7 +441,7 @@ class _MatchScreenState extends State<MatchScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Terminer le match?'),
         content: Text(
-          'Êtes-vous sûr de vouloir terminer le match entre ${match.player1Name} et ${match.player2Name}?',
+          'Êtes-vous sûr de vouloir terminer le match entre ${match.player1.name} et ${match.player2.name}?',
         ),
         actions: [
           TextButton(

@@ -1,7 +1,9 @@
+import 'package:arbitennis/models/player.dart';
+
 class TennisMatch {
   final String id;
-  final String player1Name;
-  final String player2Name;
+  final Player player1;
+  final Player player2;
   final String tournamentName;
   final List<SetScore> sets;
   final int servingPlayer;
@@ -10,11 +12,12 @@ class TennisMatch {
   final bool isCompleted;
   final int winner;
   final List<PointHistoryEntry> pointHistory;
+  final int leftPlayer;
 
   TennisMatch({
     required this.id,
-    required this.player1Name,
-    required this.player2Name,
+    required this.player1,
+    required this.player2,
     required this.tournamentName,
     required this.sets,
     required this.servingPlayer,
@@ -23,18 +26,20 @@ class TennisMatch {
     required this.isCompleted,
     required this.winner,
     required this.pointHistory,
+    required this.leftPlayer,
   });
 
   factory TennisMatch.create({
     required String matchId,
-    required String player1Name,
-    required String player2Name,
+    required Player player1,
+    required Player player2,
     required String tournamentName,
+    required int leftPlayer,
   }) {
     return TennisMatch(
       id: matchId,
-      player1Name: player1Name,
-      player2Name: player2Name,
+      player1: player1,
+      player2: player2,
       tournamentName: tournamentName,
       sets: [SetScore.newSet()],
       servingPlayer: 1,
@@ -43,13 +48,14 @@ class TennisMatch {
       isCompleted: false,
       winner: 0,
       pointHistory: [],
+      leftPlayer: leftPlayer,
     );
   }
 
   TennisMatch copyWith({
     String? id,
-    String? player1Name,
-    String? player2Name,
+    Player? player1,
+    Player? player2,
     String? tournamentName,
     List<SetScore>? sets,
     int? servingPlayer,
@@ -58,11 +64,12 @@ class TennisMatch {
     bool? isCompleted,
     int? winner,
     List<PointHistoryEntry>? pointHistory,
+    int? leftPlayer,
   }) {
     return TennisMatch(
       id: id ?? this.id,
-      player1Name: player1Name ?? this.player1Name,
-      player2Name: player2Name ?? this.player2Name,
+      player1: player1 ?? this.player1,
+      player2: player2 ?? this.player2,
       tournamentName: tournamentName ?? this.tournamentName,
       sets: sets ?? this.sets,
       servingPlayer: servingPlayer ?? this.servingPlayer,
@@ -71,6 +78,7 @@ class TennisMatch {
       isCompleted: isCompleted ?? this.isCompleted,
       winner: winner ?? this.winner,
       pointHistory: pointHistory ?? this.pointHistory,
+      leftPlayer: leftPlayer ?? this.leftPlayer,
     );
   }
 
@@ -94,9 +102,9 @@ class TennisMatch {
     if (currentGameScore1 == currentGameScore2 && currentGameScore1 >= 3) {
       return 'Égalité';
     } else if (currentGameScore1 >= 4 && currentGameScore1 > currentGameScore2) {
-      return 'Avantage ${player1Name}';
+      return 'Avantage ${player1.name}';
     } else if (currentGameScore2 >= 4 && currentGameScore2 > currentGameScore1) {
-      return 'Avantage ${player2Name}';
+      return 'Avantage ${player2.name}';
     } else {
       String score1 = "";
       String score2 = "";

@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import '../models/tennis_match.dart';
+import '../models/player.dart';
 
 // Events
 abstract class MatchEvent extends Equatable {
@@ -14,22 +15,24 @@ abstract class MatchEvent extends Equatable {
 
 class CreateMatch extends MatchEvent {
   final String matchId;
-  final String player1Name;
-  final String player2Name;
+  final Player player1;
+  final Player player2;
   final String tournamentName;
+  final int leftPlayer;
 
   const CreateMatch({
     required this.matchId,
-    required this.player1Name,
-    required this.player2Name,
+    required this.player1,
+    required this.player2,
     required this.tournamentName,
+    required this.leftPlayer,
   });
 
   @override
   List<Object?> get props => [
     matchId,
-    player1Name,
-    player2Name,
+    player1,
+    player2,
     tournamentName,
   ];
 }
@@ -141,9 +144,10 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
   void _onCreateMatch(CreateMatch event, Emitter<MatchState> emit) {
     final newMatch = TennisMatch.create(
       matchId: event.matchId,
-      player1Name: event.player1Name,
-      player2Name: event.player2Name,
+      player1: event.player1,
+      player2: event.player2,
       tournamentName: event.tournamentName,
+      leftPlayer: event.leftPlayer,
     );
 
     final updatedMatches = [...state.matches, newMatch];
@@ -187,6 +191,8 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
     int newScore1 = match.currentGameScore1;
     int newScore2 = match.currentGameScore2;
     List<SetScore> newSets = List.from(match.sets);
+    int leftPlayer = match.leftPlayer;
+
 
     // Handle scoring based on whether we're in a tiebreak or regular game
     if (currentSet.inTiebreak) {
@@ -199,6 +205,11 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
         newSets[currentSetIndex] = currentSet.copyWith(
           player2TiebreakPoints: currentSet.player2TiebreakPoints + 1,
         );
+      }
+
+      // Check change side
+      if ((newSets[currentSetIndex].player1TiebreakPoints + newSets[currentSetIndex].player2TiebreakPoints) % 6 == 0) {
+        leftPlayer = leftPlayer == 1 ? 2 : 1;
       }
 
       // Check if tiebreak is won
@@ -346,6 +357,7 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
         newSets[currentSetIndex] = currentSet.copyWith(
           player2Games: currentSet.player2Games + 1,
         );
+
       }
     }
 
@@ -384,6 +396,10 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
         matchWinner = 2;
       }
 
+      if ((newSets[currentSetIndex].player1Games + newSets[currentSetIndex].player2Games) % 2 != 0) {
+        leftPlayer = leftPlayer == 1 ? 2 : 1;
+      }
+
       // Start a new set if match hasn't ended
       if (!matchEnded) {
         newSets.add(SetScore.newSet());
@@ -397,6 +413,7 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
         isCompleted: matchEnded,
         winner: matchWinner,
         pointHistory: updatedPointHistory,
+        leftPlayer: leftPlayer,
       );
 
       final updatedMatches = [...state.matches];

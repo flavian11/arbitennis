@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/match_bloc.dart';
-import '../models/tennis_match.dart';
+import '../models/player.dart';
 import 'match_screen.dart';
 
 class MatchSetupScreen extends StatefulWidget {
@@ -13,14 +13,24 @@ class MatchSetupScreen extends StatefulWidget {
 
 class _MatchSetupScreenState extends State<MatchSetupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _player1Controller = TextEditingController();
-  final _player2Controller = TextEditingController();
+  final _player1NameController = TextEditingController();
+  final _player1RankingController = TextEditingController();
+  final _player1CountryController = TextEditingController();
+
+  final _player2NameController = TextEditingController();
+  final _player2RankingController = TextEditingController();
+  final _player2CountryController = TextEditingController();
+
   final _tournamentController = TextEditingController();
 
   @override
   void dispose() {
-    _player1Controller.dispose();
-    _player2Controller.dispose();
+    _player1NameController.dispose();
+    _player1RankingController.dispose();
+    _player1CountryController.dispose();
+    _player2NameController.dispose();
+    _player2RankingController.dispose();
+    _player2CountryController.dispose();
     _tournamentController.dispose();
     super.dispose();
   }
@@ -36,10 +46,15 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
+            const Text(
+              'Joueur 1',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
             TextFormField(
-              controller: _player1Controller,
+              controller: _player1NameController,
               decoration: const InputDecoration(
-                labelText: 'Joueur 1',
+                labelText: 'Nom',
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
@@ -49,11 +64,41 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _player1RankingController,
+                    decoration: const InputDecoration(
+                      labelText: 'Classement (optionnel)',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _player1CountryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Pays (optionnel)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Joueur 2',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
             TextFormField(
-              controller: _player2Controller,
+              controller: _player2NameController,
               decoration: const InputDecoration(
-                labelText: 'Joueur 2',
+                labelText: 'Nom',
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
@@ -63,7 +108,32 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _player2RankingController,
+                    decoration: const InputDecoration(
+                      labelText: 'Classement (optionnel)',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _player2CountryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Pays (optionnel)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
             TextFormField(
               controller: _tournamentController,
               decoration: const InputDecoration(
@@ -77,19 +147,39 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   final matchId = DateTime.now().millisecondsSinceEpoch.toString();
 
+                  final player1 = Player.create(
+                    name: _player1NameController.text,
+                    ranking: _player1RankingController.text.isNotEmpty
+                        ? int.tryParse(_player1RankingController.text)
+                        : null,
+                    country: _player1CountryController.text.isNotEmpty
+                        ? _player1CountryController.text
+                        : null,
+                  );
+
+                  final player2 = Player.create(
+                    name: _player2NameController.text,
+                    ranking: _player2RankingController.text.isNotEmpty
+                        ? int.tryParse(_player2RankingController.text)
+                        : null,
+                    country: _player2CountryController.text.isNotEmpty
+                        ? _player2CountryController.text
+                        : null,
+                  );
+
                   context.read<MatchBloc>().add(
                     CreateMatch(
                       matchId: matchId,
-                      player1Name: _player1Controller.text,
-                      player2Name: _player2Controller.text,
+                      player1: player1,
+                      player2: player2,
                       tournamentName: _tournamentController.text,
+                      leftPlayer: 1,
                     ),
                   );
 
