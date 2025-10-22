@@ -18,6 +18,7 @@ class _MatchScreenState extends State<MatchScreen> {
   Timer? _timer;
   int _seconds = 0;
   bool _isFirstFault = true;
+  int _pointDuration = 0;
 
   @override
   void initState() {
@@ -34,11 +35,12 @@ class _MatchScreenState extends State<MatchScreen> {
   void _startTimer() {
     _timer?.cancel();
     setState(() {
-      _seconds = 0;
+      _pointDuration = 0;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _seconds++;
+        _pointDuration++;
       });
     });
   }
@@ -76,13 +78,14 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
           body: Column(
             children: [
-              _buildScoreBoard(context, match),
-              const Divider(height: 1),
               _buildControlHeader(context, match),
+              _buildScoreBoard(context, match),
+              const Divider(height: 1, thickness: 2),
               Expanded(
                 child: _buildPlayingField(context, match),
               ),
               _buildActionButtons(context, match),
+              _buildCurrentScore(context, match),
             ],
           ),
         );
@@ -93,35 +96,139 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget _buildControlHeader(BuildContext context, TennisMatch match) {
     return Container(
       color: Colors.grey[300],
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              context.read<MatchBloc>().add(UndoLastPoint(widget.matchId));
-              _resetFaultStatus();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[500],
+          SizedBox(
+            width: 100,
+            child: ElevatedButton(
+              onPressed: () {
+                context.read<MatchBloc>().add(UndoLastPoint(widget.matchId));
+                _resetFaultStatus();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[400],
+                foregroundColor: Colors.black,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text(
+                'UNDO',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
-            child: const Text('UNDO'),
           ),
           Text(
             _formatTime(_seconds),
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // Options menu
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[500],
+          SizedBox(
+            width: 100,
+            child: ElevatedButton(
+              onPressed: () {
+                // Options menu
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[400],
+                foregroundColor: Colors.black,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text(
+                'OPTIONS',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
-            child: const Text('OPTIONS'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreBoard(BuildContext context, TennisMatch match) {
+    return Container(
+      color: Colors.grey[200],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const SizedBox(width: 120),
+              ...List.generate(
+                3,
+                    (index) => Expanded(
+                  child: Text(
+                    '${index + 1}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _buildPlayerScoreRow(context, match, 1),
+          const SizedBox(height: 4),
+          _buildPlayerScoreRow(context, match, 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerScoreRow(BuildContext context, TennisMatch match, int playerNum) {
+    final playerName = playerNum == 1 ? match.player1.name : match.player2.name;
+    final isServing = match.servingPlayer == playerNum;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                playerName,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          ...List.generate(
+            3,
+                (index) {
+              if (index < match.sets.length) {
+                final setScore = match.sets[index];
+                final playerScore = playerNum == 1 ? setScore.player1Games : setScore.player2Games;
+
+                return Expanded(
+                  child: Text(
+                    '$playerScore',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                );
+              } else {
+                return Expanded(child: Container());
+              }
+            },
           ),
         ],
       ),
@@ -129,140 +236,250 @@ class _MatchScreenState extends State<MatchScreen> {
   }
 
   Widget _buildPlayingField(BuildContext context, TennisMatch match) {
-    final servingPlayerName = match.servingPlayer == 1
+    final leftPlayerName = match.leftPlayer == 1
         ? match.player1.name
         : match.player2.name;
-    final receivingPlayerName = match.servingPlayer == 1
+    final rightPlayerName = match.leftPlayer == 1
         ? match.player2.name
         : match.player1.name;
 
+    final isLeftPlayerServing = match.servingPlayer == match.leftPlayer;
+
+
+    final bool isEvenScore = (match.currentGameScore1 + match.currentGameScore2) % 2 == 0; // Score pair
+
     return Container(
       color: Colors.white,
-      child: Column(
-        children: [
-          Expanded(
-            child: Center(
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Colonne gauche du filet
+            SizedBox(
+              width: 120,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '${match.currentGameScoreDisplay}',
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        receivingPlayerName,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Icon(Icons.add, size: 32),
-                      ),
-                      Text(
-                        servingPlayerName,
+                  // Partie haute gauche
+                  SizedBox(
+                    height: 100,
+                    child: Center(
+                      child: isEvenScore // Si pair, joueur gauche en BAS (donc rien ici)
+                          ? Container()
+                          : Text( // Si impair, joueur gauche en haut
+                        leftPlayerName,
                         style: TextStyle(
                           fontSize: 18,
-                          color: Colors.green,
                           fontWeight: FontWeight.bold,
+                          color: isLeftPlayerServing ? Colors.green[600] : Colors.black,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 40),
-
+                  // Ligne de service
+                  Container(height: 4, color: Colors.grey[400]),
+                  // Partie basse gauche
+                  SizedBox(
+                    height: 100,
+                    child: Center(
+                      child: isEvenScore // Si pair, joueur gauche en bas
+                          ? Text(
+                        leftPlayerName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isLeftPlayerServing ? Colors.green[600] : Colors.black,
+                        ),
+                      )
+                          : Container(), // Si impair, rien ici
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+            // Filet (ligne verticale au centre)
+            Container(
+              width: 4,
+              height: 204,
+              color: Colors.grey[400],
+            ),
+            // Colonne droite du filet
+            SizedBox(
+              width: 120,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Partie haute droite
+                  SizedBox(
+                    height: 100,
+                    child: Center(
+                      child: isEvenScore // Si pair, joueur droit en haut
+                          ? Text(
+                        rightPlayerName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: !isLeftPlayerServing ? Colors.green[600] : Colors.black,
+                        ),
+                      )
+                          : Container(), // Si impair, rien ici
+                    ),
+                  ),
+                  // Ligne de service
+                  Container(height: 4, color: Colors.grey[400]),
+                  // Partie basse droite
+                  SizedBox(
+                    height: 100,
+                    child: Center(
+                      child: isEvenScore // Si pair, joueur droit en BAS (donc rien ici)
+                          ? Container()
+                          : Text( // Si impair, joueur droit en bas
+                        rightPlayerName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: !isLeftPlayerServing ? Colors.green[600] : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentScore(BuildContext context, TennisMatch match) {
+    return Container(
+      color: Colors.grey[100],
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Text(
+        match.currentGameScoreDisplay,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 56,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 8,
+        ),
       ),
     );
   }
 
   Widget _buildActionButtons(BuildContext context, TennisMatch match) {
     final player1ButtonColor = match.servingPlayer == 1
-        ? Colors.lightGreen
-        : Colors.lightBlue;
+        ? Colors.lightGreen[400]
+        : Colors.lightBlue[200];
     final player2ButtonColor = match.servingPlayer == 2
-        ? Colors.lightGreen
-        : Colors.lightBlue;
+        ? Colors.lightGreen[400]
+        : Colors.lightBlue[200];
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
+        Container(
+          color: Colors.grey[100],
+          child: Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
                     _startTimer();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                  child: const Text(
+                    'NET',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
-                child: const Text('NET'),
               ),
-            ),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  // ACE - point to server
-                  context.read<MatchBloc>().add(AddPoint(widget.matchId, match.servingPlayer));
-                  _startTimer();
-                  _resetFaultStatus();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(width: 2),
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    context.read<MatchBloc>().add(AddPoint(widget.matchId, match.servingPlayer));
+                    _startTimer();
+                    _resetFaultStatus();
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                  child: const Text(
+                    'ACE',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
-                child: const Text('ACE'),
               ),
-            ),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  // FAULT/DBLFLT logic
-                  if (_isFirstFault) {
+              const SizedBox(width: 2),
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    if (_isFirstFault) {
+                      setState(() {
+                        _isFirstFault = false;
+                      });
+                    } else {
+                      final receivingPlayer = match.servingPlayer == 1 ? 2 : 1;
+                      context.read<MatchBloc>().add(AddPoint(widget.matchId, receivingPlayer));
+                      _startTimer();
+                      _resetFaultStatus();
+                    }
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                  child: Text(
+                    _isFirstFault ? 'FAULT' : 'DBLFLT',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
                     setState(() {
                       _isFirstFault = false;
                     });
-                  } else {
-                    // Double fault - point to receiver
-                    final receivingPlayer = match.servingPlayer == 1 ? 2 : 1;
-                    context.read<MatchBloc>().add(AddPoint(widget.matchId, receivingPlayer));
-                    _startTimer();
-                    _resetFaultStatus();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                  child: const Text(
+                    'FTFLT',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
-                child: Text(_isFirstFault ? 'FAULT' : 'DBLFLT'),
               ),
-            ),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  // FTFLT (foot fault) - counts as first fault
-                  setState(() {
-                    _isFirstFault = false;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('FTFLT'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         Row(
           children: [
@@ -275,13 +492,16 @@ class _MatchScreenState extends State<MatchScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: player1ButtonColor,
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  elevation: 0,
                 ),
                 child: Text(
                   match.leftPlayer == 1 ? match.player1.name.toUpperCase() : match.player2.name.toUpperCase(),
                   style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -295,130 +515,21 @@ class _MatchScreenState extends State<MatchScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: player2ButtonColor,
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  elevation: 0,
                 ),
                 child: Text(
                   match.leftPlayer == 1 ? match.player2.name.toUpperCase() : match.player1.name.toUpperCase(),
                   style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScoreBoard(BuildContext context, TennisMatch match) {
-    return Container(
-      color: Colors.grey[200],
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const SizedBox(width: 100),
-              ...List.generate(
-                match.sets.length,
-                    (index) => Expanded(
-                  child: Text(
-                    'Set ${index + 1}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 100),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _buildPlayerScoreRow(context, match, 1),
-          const SizedBox(height: 4),
-          _buildPlayerScoreRow(context, match, 2),
-          const SizedBox(height: 16),
-          Text(
-            'Score actuel: ${match.currentGameScoreDisplay}',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (match.isCompleted)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Text(
-                'MATCH TERMINÉ - ${match.winner == 1 ? match.player1.name : match.player2.name} GAGNANT',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlayerScoreRow(BuildContext context, TennisMatch match, int playerNum) {
-    final playerName = playerNum == 1 ? match.player1.name : match.player2.name;
-    final isServing = match.servingPlayer == playerNum;
-
-    return Row(
-      children: [
-        SizedBox(
-          width: 100,
-          child: Row(
-            children: [
-              if (isServing)
-                const Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.sports_tennis, size: 16),
-                ),
-              Expanded(
-                child: Text(
-                  playerName,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: isServing ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        ...List.generate(
-          match.sets.length,
-              (index) {
-            final setScore = match.sets[index];
-            final playerScore = playerNum == 1 ? setScore.player1Games : setScore.player2Games;
-            final tiebreakScore = playerNum == 1 ? setScore.player1TiebreakPoints : setScore.player2TiebreakPoints;
-
-            return Expanded(
-              child: Text(
-                setScore.inTiebreak && tiebreakScore > 0
-                    ? '$playerScore ($tiebreakScore)'
-                    : '$playerScore',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          },
-        ),
-        SizedBox(
-          width: 100,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              playerNum == 1 ? match.player1SetsWon : match.player2SetsWon,
-                  (index) => const Icon(Icons.circle, size: 12, color: Colors.green),
-            ),
-          ),
         ),
       ],
     );

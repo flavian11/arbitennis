@@ -102,9 +102,9 @@ class TennisMatch {
     if (currentGameScore1 == currentGameScore2 && currentGameScore1 >= 3) {
       return 'Égalité';
     } else if (currentGameScore1 >= 4 && currentGameScore1 > currentGameScore2) {
-      return 'Avantage ${player1.name}';
+      return 'Ad. ${player1.name}';
     } else if (currentGameScore2 >= 4 && currentGameScore2 > currentGameScore1) {
-      return 'Avantage ${player2.name}';
+      return 'Ad. ${player2.name}';
     } else {
       String score1 = "";
       String score2 = "";
